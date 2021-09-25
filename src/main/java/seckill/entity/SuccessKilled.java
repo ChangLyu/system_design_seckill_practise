@@ -1,5 +1,7 @@
 package seckill.entity;
 
+import java.util.Date;
+
 public class SuccessKilled {
     private long seckillId;
     private long userPhone;

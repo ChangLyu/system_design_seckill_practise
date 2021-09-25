@@ -1,5 +1,6 @@
 package seckill.dao;
 
+import org.apache.ibatis.annotations.Param;
 import seckill.entity.Seckill;
 
 import java.util.Date;
@@ -12,7 +13,7 @@ public interface SeckillDao {
      * @param killTime it is the time user trigger this action, only valid after start time
      * @return update record, if <1, then means failed
      */
-    int reduceNumber(long seckillId, Date killTime);
+    int reduceNumber(@Param("seckillId") long seckillId, @Param("killTime") Date killTime);
 
     /**
      * query seckill inventroy by Id
@@ -27,6 +28,6 @@ public interface SeckillDao {
      * @param limit , return limit count of records
      * @return
      */
-    List<Seckill> queryAll(int offset, int limit);
+    List<Seckill> queryAll(@Param("offset") int offset, @Param("limit")  int limit);
 
 }
