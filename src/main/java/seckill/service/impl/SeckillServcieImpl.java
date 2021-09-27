@@ -51,7 +51,9 @@ public class SeckillServcieImpl implements SeckillService {
         return new Exposer(true, getMD5(seckillId), seckillId);
     }
 
-    /**Java异常分编译期异常和运行期异常，运行期异常不需要手工try-catch，Spring的的声明式事务只接收运行期异常回滚策略，非运行期异常不会帮我们回滚。*/
+    /**
+     * Java异常分编译期异常和运行期异常，运行期异常不需要手工try-catch，Spring的的声明式事务只接收运行期异常回滚策略，非运行期异常不会帮我们回滚。
+     */
     @Transactional
     public SeckillExecution executeSeckill(long seckillId, long userPhone, String md5) throws SeckillException, RepeatKillException, SeckillCloseException {
         if (md5 == null || !getMD5(seckillId).equals(md5)) {
@@ -68,7 +70,7 @@ public class SeckillServcieImpl implements SeckillService {
                     throw new RepeatKillException("seckill repeated!");
                 } else {
                     SuccessKilled successKilled = successKilledDao.queryBySeckillId(seckillId, userPhone);
-                    return new SeckillExecution(seckillId, SeckillStatEnum.SUCCESS, "秒杀成功", successKilled);
+                    return new SeckillExecution(seckillId, SeckillStatEnum.SUCCESS, successKilled);
                 }
             }
         } catch (SeckillCloseException e1) {
