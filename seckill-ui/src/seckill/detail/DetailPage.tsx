@@ -10,8 +10,12 @@ export default class DetailPage extends React.Component<any, any> {
             value: props.location.state,
             userPhone: phone,
             register: !this.validatePhone(phone),
-            currentTime: new Date().getTime,
-            seckillState: SeckillStates.NOT_START
+            currentTime: 0,
+            seckillState: SeckillStates.LOADING,
+            timer: null,
+            remaingingMilleSec: 0,
+            timeRemain: 0,
+            seckillExposer: null
         };
 
     }
@@ -39,9 +43,15 @@ export default class DetailPage extends React.Component<any, any> {
             } else if (this.state.value.startTime > this.state.currentTime) {
                 // not begin yet
                 this.setState({ seckillState: SeckillStates.NOT_START })
+                const countDownTime = this.state.value.startTime - this.state.currentTime;
+                this.setState({
+                    remaingingMilleSec: countDownTime,
+                    timer: setInterval(this.countDown.bind(this), 1000)
+                });
             } else {
                 // start
                 this.setState({ seckillState: SeckillStates.START })
+                this.getSeckillExposer();
             }
         }
 
@@ -58,21 +68,66 @@ export default class DetailPage extends React.Component<any, any> {
         }
     }
 
+    getSeckillExposer() {
+        const GET_SECKILL_EXPOSER = `http://localhost:8080/seckill/seckill/${this.state.value.seckillId}/exposer`;
+        fetch(GET_SECKILL_EXPOSER)
+            .then(response => response.json())
+            .then(jsonResponse => {
+                this.setState({ seckillExposer: jsonResponse.data });
+            });
+    }
+
+    displaySeckill() {
+        return (
+            this.state.seckillExposer ?
+                <div>
+                    {this.state.seckillExposer.seckillId}
+                </div> : <div>LOADING...</div>
+        );
+    }
+
     renderSeckillInfor() {
-        console.log(this.state.seckillState);
         switch (this.state.seckillState) {
             case SeckillStates.NOT_START:
-                return (<div>
-                    <div>Kill has not started yet!</div>
-                    <div>{this.state.value.seckillId}</div>
-                    <div>{this.state.value.startTime}</div>
-                    <div>{this.state.value.endTime}</div>
+                return (<div><div>Kill has not started yet!</div>
+                    <div>{this.state.timeRemain.days} Days, {this.state.timeRemain.hours} Hours, {this.state.timeRemain.minutes}Minutes, {this.state.timeRemain.seconds} Seconds</div>
                 </div>);
             case SeckillStates.START:
-                return (<div>Kill start!</div>);
-            default:
+                return (
+                    <div>
+                        <div>Kill start!</div>
+                        {this.displaySeckill()}
+                    </div>);
+            case SeckillStates.ENDED:
                 return (<div> This Seckill {this.state.value.seckillId} is already closed! </div>);
+            default:
+                return (<div> LOADING....</div>);
         }
+    }
+
+    countDown() {
+        if (this.state.remaingingMilleSec && this.state.remaingingMilleSec > 1000) {
+            let timeRemain = this.state.remaingingMilleSec - 1000;
+            this.setState({ remaingingMilleSec: timeRemain });
+            let remainTime = this.getRemainingTime();
+            this.setState({ timeRemain: remainTime });
+        } else {
+            this.setState({ seckillState: SeckillStates.START });
+            clearInterval(this.state.timer);
+
+        }
+    }
+
+
+    getRemainingTime() {
+        const difference = this.state.remaingingMilleSec;
+        const seconds = Math.floor((difference / 1000) % 60);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        const hours = Math.floor((difference / 1000 * 60 * 60) % 24);
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        return {
+            days, hours, minutes, seconds
+        };
     }
 
 
@@ -84,9 +139,14 @@ export default class DetailPage extends React.Component<any, any> {
                     register your phone pls:
                     <input type="text" onChange={this.updateInput.bind(this)}></input>
                     <button onClick={this.registerPhone.bind(this)}>Register</button>
-                </div> :
-                this.state.value ?
-                    this.renderSeckillInfor() : <div>Invalid URL, please check detail from List</div>
+                </div> : (
+                    this.state.value ?
+                        (
+                            this.state.seckillState === SeckillStates.LOADING ?
+                                (<div>LOADING....</div>) : this.renderSeckillInfor()
+                        ) : <div>Invalid URL, please check detail from List</div>
+                )
+
 
         )
     }

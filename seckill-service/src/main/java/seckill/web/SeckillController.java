@@ -16,7 +16,7 @@ import seckill.service.SeckillService;
 import java.util.Date;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/seckill")
 public class SeckillController {
 
@@ -31,24 +31,21 @@ public class SeckillController {
         return list;
     }
 
-    @RequestMapping(value = "/{seckillId}/detail", method = RequestMethod.GET)
-    public String detail(@PathVariable("seckillId") Long seckillId, Model model) {
-        if (seckillId == null) {
-            return "redirect:/seckill/list";
+    @CrossOrigin
+    @GetMapping(value = "/{seckillId}/detail")
+    public SeckillResult<Seckill>  detail(@PathVariable("seckillId") Long seckillId, Model model) {
+        SeckillResult<Seckill> result;
+        try {
+            Seckill seckill = seckillService.getById(seckillId);
+            result = new SeckillResult<Seckill>(true, seckill);
+        }catch(Exception e){
+            e.printStackTrace();
+            result = new SeckillResult<Seckill>(false, e.getMessage());
         }
-
-        Seckill seckill = seckillService.getById(seckillId);
-        if (seckill == null) {
-            return "forward:/seckill/list";
-        }
-
-        model.addAttribute("seckill", seckill);
-
-        return "detail";
+        return result;
     }
-
-    @RequestMapping(value = "{/seckillId}/exposer", method = RequestMethod.GET, produces = {"application/json; charset=UTF-8"})
-    @ResponseBody
+    @CrossOrigin
+    @GetMapping(value = "/{seckillId}/exposer")
     public SeckillResult<Exposer> exposer(@PathVariable("seckillId") Long seckillId) {
         SeckillResult<Exposer> result;
         try {
@@ -62,6 +59,7 @@ public class SeckillController {
     }
 
     /*Service层中的抛出异常是为了让Spring能够回滚，Controller层中捕获异常是为了将异常转换为对应的Json供前台使用，缺一不可。*/
+    @CrossOrigin
     @RequestMapping(value = "{/seckillId}/{md5}/execution}", method = RequestMethod.POST, produces = {"application/json; charset=UTF-8"})
     @ResponseBody
     public SeckillResult<SeckillExecution> execute(@PathVariable("seckillId") Long seckillId, @PathVariable("md5") String md5,

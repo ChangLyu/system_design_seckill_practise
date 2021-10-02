@@ -48,7 +48,7 @@ public class SeckillServcieImpl implements SeckillService {
         if (nowTime.before(startTime) || nowTime.after(endTime)) {
             return new Exposer(false, seckillId, nowTime.getTime(), startTime.getTime(), endTime.getTime());
         }
-        return new Exposer(true, getMD5(seckillId), seckillId);
+        return new Exposer(true, getMD5(seckillId), seckillId, nowTime.getTime(), startTime.getTime(), endTime.getTime());
     }
 
     /**
