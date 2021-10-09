@@ -1,6 +1,8 @@
 import React from 'react'
 import Cookies from 'js-cookie';
 import { SeckillStates } from '../../constants/constants';
+import { Case, Switch } from '../../utils/Switch';
+import { Link } from 'react-router-dom';
 export default class DetailPage extends React.Component<any, any> {
 
     constructor(props: any) {
@@ -15,7 +17,9 @@ export default class DetailPage extends React.Component<any, any> {
             timer: null,
             remaingingMilleSec: 0,
             timeRemain: 0,
-            seckillExposer: null
+            seckillExposer: null,
+            seckillExposerURL: null,
+            killResult: null
         };
 
     }
@@ -33,13 +37,10 @@ export default class DetailPage extends React.Component<any, any> {
         return phoneNumber && phoneNumber.length === 11 && !isNaN(parseInt(phoneNumber));
     }
     updateSeckillState() {
-        console.log("coundone");
         if (this.state.value) {
             if (this.state.value.endTime < this.state.currentTime) {
                 // ended
-                console.log('set state before : ' + this.state.seckillState)
                 this.setState({ seckillState: SeckillStates.ENDED })
-                console.log('set state after ' + this.state.seckillState)
             } else if (this.state.value.startTime > this.state.currentTime) {
                 // not begin yet
                 this.setState({ seckillState: SeckillStates.NOT_START })
@@ -54,14 +55,11 @@ export default class DetailPage extends React.Component<any, any> {
                 this.getSeckillExposer();
             }
         }
-
-
     }
     updateInput(event: any) {
         this.setState({ userPhone: event.target.value })
     }
     registerPhone(event: any) {
-
         if (this.validatePhone(this.state.userPhone)) {
             Cookies.set('userPhone', this.state.userPhone);
             window.location.reload();
@@ -74,35 +72,72 @@ export default class DetailPage extends React.Component<any, any> {
             .then(response => response.json())
             .then(jsonResponse => {
                 this.setState({ seckillExposer: jsonResponse.data });
+                if (!this.state.seckillExposer.exposed) {
+                    this.setState({
+                        currentTime: jsonResponse.data.now,
+                        value: {
+                            ...this.state.value,
+                            startTime: jsonResponse.data.start
+                        }
+                    });
+                    this.updateSeckillState();
+                } else {
+                    this.setState({ seckillExposerURL: `http://localhost:8080/seckill/seckill/${this.state.seckillExposer.seckillId}/${this.state.seckillExposer.md5}/execution` });
+                }
+            });
+    }
+    beginKill() {
+        const requestOptions = {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        }
+        fetch(this.state.seckillExposerURL, requestOptions as any)
+            .then(response => response.json())
+            .then(jsonResponse => {
+                this.setState({ killResult: jsonResponse.data ? jsonResponse.data.stateInfo : null })
             });
     }
 
     displaySeckill() {
         return (
-            this.state.seckillExposer ?
-                <div>
-                    {this.state.seckillExposer.seckillId}
-                </div> : <div>LOADING...</div>
+            <div>
+                {
+                    this.state.seckillExposer && this.state.seckillExposer.exposed ?
+                        <div>
+
+                            {this.state.seckillExposerURL}
+                            <button onClick={this.beginKill.bind(this)}> KILL!</button>
+
+                        </div> : <div>LOADING...</div>
+                }
+                {this.state.killResult && <div> {this.state.killResult}</div>}
+            </div>
         );
     }
 
     renderSeckillInfor() {
-        switch (this.state.seckillState) {
-            case SeckillStates.NOT_START:
-                return (<div><div>Kill has not started yet!</div>
-                    <div>{this.state.timeRemain.days} Days, {this.state.timeRemain.hours} Hours, {this.state.timeRemain.minutes}Minutes, {this.state.timeRemain.seconds} Seconds</div>
-                </div>);
-            case SeckillStates.START:
-                return (
+        return (
+            <Switch value={this.state.seckillState}>
+                <Case value={SeckillStates.NOT_START}>
+                    <div><div>Kill has not started yet!</div>
+                        <div>{this.state.timeRemain.days} Days, {this.state.timeRemain.hours} Hours, {this.state.timeRemain.minutes}Minutes, {this.state.timeRemain.seconds} Seconds</div>
+                    </div>
+                </Case>
+                <Case value={SeckillStates.START}>
                     <div>
                         <div>Kill start!</div>
                         {this.displaySeckill()}
-                    </div>);
-            case SeckillStates.ENDED:
-                return (<div> This Seckill {this.state.value.seckillId} is already closed! </div>);
-            default:
-                return (<div> LOADING....</div>);
-        }
+                    </div>
+                </Case>
+                <Case value={SeckillStates.ENDED}>
+                    <div> This Seckill {this.state.value.seckillId} is already closed! </div>
+                </Case>
+                <Case value={SeckillStates.LOADING}>
+                    <div> LOADING SECKILL INFORMATION....</div>
+                </Case>
+            </Switch>
+        )
     }
 
     countDown() {
@@ -132,7 +167,6 @@ export default class DetailPage extends React.Component<any, any> {
 
 
     render() {
-        console.log('render');
         return (
             this.state.register ?
                 <div>

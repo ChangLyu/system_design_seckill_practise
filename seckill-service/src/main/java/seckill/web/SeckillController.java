@@ -59,11 +59,11 @@ public class SeckillController {
     }
 
     /*Service层中的抛出异常是为了让Spring能够回滚，Controller层中捕获异常是为了将异常转换为对应的Json供前台使用，缺一不可。*/
-    @CrossOrigin
-    @RequestMapping(value = "{/seckillId}/{md5}/execution}", method = RequestMethod.POST, produces = {"application/json; charset=UTF-8"})
+    @CrossOrigin( allowCredentials = "true")
+    @RequestMapping(value = "/{seckillId}/{md5}/execution", method = RequestMethod.POST, produces = {"application/json; charset=UTF-8"})
     @ResponseBody
     public SeckillResult<SeckillExecution> execute(@PathVariable("seckillId") Long seckillId, @PathVariable("md5") String md5,
-                                                   @CookieValue(value = "killedPhone", required = false) Long userPhone) {
+                                                   @CookieValue(value = "userPhone", required = false) Long userPhone) {
         SeckillResult<SeckillExecution> seckillResult;
         if (userPhone == null) {
             seckillResult = new SeckillResult<SeckillExecution>(false, "User unregistered!");
