@@ -147,12 +147,6 @@
             <artifactId>protostuff-runtime</artifactId>
             <version>1.0.8</version>
         </dependency>
-        <!--导入apache工具类 -->
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>jquery.countdown</artifactId>
-            <version>2.1.0</version>
-        </dependency>
 
     </dependencies>
     <build>
